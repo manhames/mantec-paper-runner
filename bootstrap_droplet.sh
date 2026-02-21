@@ -25,6 +25,7 @@ set_env_key() {
 MANTEC_REPO_URL="${MANTEC_REPO_URL:-https://github.com/manhames/mantec-paper-core.git}"
 MANTEC_DIR="${MANTEC_DIR:-/opt/mantec}"
 ENV_FILE="${MANTEC_DIR}/analysis/real_world_testsing/.env"
+DATA_ENV_FILE="${MANTEC_DIR}/data/.env"
 FORWARD_START_UTC="${FORWARD_START_UTC:-$(date -u +%Y-%m-%dT00:00:00Z)}"
 PAPER_RUNTIME_HOURS="${PAPER_RUNTIME_HOURS:-336}"
 TOTAL_NET_WORTH_USD="${TOTAL_NET_WORTH_USD:-100000}"
@@ -74,6 +75,7 @@ fi
 
 echo "==> Preparing env file"
 cp -n "${MANTEC_DIR}/analysis/real_world_testsing/.env.example" "${ENV_FILE}"
+cp -n "${MANTEC_DIR}/data/.env.example" "${DATA_ENV_FILE}"
 set_env_key "${ENV_FILE}" "DATABASE_URL" "${DATABASE_URL}"
 set_env_key "${ENV_FILE}" "FORWARD_START_UTC" "${FORWARD_START_UTC}"
 set_env_key "${ENV_FILE}" "PAPER_RUNTIME_HOURS" "${PAPER_RUNTIME_HOURS}"
@@ -83,7 +85,9 @@ set_env_key "${ENV_FILE}" "LIVE_EXECUTION" "false"
 set_env_key "${ENV_FILE}" "DEX_EXECUTION_MODE" "simulated"
 if [[ -n "${COINGECKO_API_KEY}" ]]; then
   set_env_key "${ENV_FILE}" "COINGECKO_API_KEY" "${COINGECKO_API_KEY}"
+  set_env_key "${DATA_ENV_FILE}" "COINGECKO_API_KEY" "${COINGECKO_API_KEY}"
 fi
+set_env_key "${DATA_ENV_FILE}" "DATABASE_URL" "${DATABASE_URL}"
 
 cd "${MANTEC_DIR}"
 echo "==> Starting DB service"
