@@ -64,6 +64,8 @@ COINGECKO_API_KEY="<YOUR_COINGECKO_PRO_KEY>" \
 PAPER_RUNTIME_HOURS="336" \
 TOTAL_NET_WORTH_USD="100000" \
 TEST_ALLOC_FRACTION="0.01" \
+CHAINS="binance-smart-chain" \
+BOOTSTRAP_LIMIT="400" \
 bash /opt/mantec-paper-runner/bootstrap_droplet.sh
 ```
 
@@ -71,8 +73,10 @@ What this does:
 1. Installs Docker + Compose plugin
 2. Clones/updates MANTEC at `/opt/mantec`
 3. Creates/updates `/opt/mantec/analysis/real_world_testsing/.env`
-4. Runs a container smoke test
-5. Starts Docker paper stack
+4. Starts DB + initializes schema
+5. Seeds universe + backfills hourly data + backfills snapshots
+6. Runs smoke tests + one paper cycle
+7. Starts Docker paper stack
 
 ## 6) Watch logs
 

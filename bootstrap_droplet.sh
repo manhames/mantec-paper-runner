@@ -9,14 +9,6 @@ if [[ "${EUID}" -ne 0 ]]; then
   exec sudo -E bash "$0" "$@"
 fi
 
-require_var() {
-  local key="$1"
-  if [[ -z "${!key:-}" ]]; then
-    echo "Missing required env var: ${key}"
-    exit 1
-  fi
-}
-
 set_env_key() {
   local file="$1"
   local key="$2"
@@ -39,6 +31,12 @@ TOTAL_NET_WORTH_USD="${TOTAL_NET_WORTH_USD:-100000}"
 TEST_ALLOC_FRACTION="${TEST_ALLOC_FRACTION:-0.01}"
 COINGECKO_API_KEY="${COINGECKO_API_KEY:-}"
 DATABASE_URL="${DATABASE_URL:-postgresql://mantec:mantec@timescaledb:5432/mantec}"
+CHAINS="${CHAINS:-binance-smart-chain}"
+BACKFILL_START_DATE="${BACKFILL_START_DATE:-2025-01-01}"
+BOOTSTRAP_DATA="${BOOTSTRAP_DATA:-true}"
+BOOTSTRAP_TOP="${BOOTSTRAP_TOP:-1200}"
+BOOTSTRAP_LIMIT="${BOOTSTRAP_LIMIT:-400}"
+BOOTSTRAP_CONCURRENCY="${BOOTSTRAP_CONCURRENCY:-8}"
 
 echo "==> Installing base packages"
 apt-get update
@@ -77,10 +75,37 @@ if [[ -n "${COINGECKO_API_KEY}" ]]; then
   set_env_key "${ENV_FILE}" "COINGECKO_API_KEY" "${COINGECKO_API_KEY}"
 fi
 
-echo "==> Running container smoke test (single cycle, no update/feature refresh)"
 cd "${MANTEC_DIR}"
+echo "==> Starting DB service"
+docker compose -f analysis/real_world_testsing/docker-compose.paper.yml up -d timescaledb
+
+echo "==> Initializing DB schema"
 docker compose -f analysis/real_world_testsing/docker-compose.paper.yml run --rm paper_bot \
-  python analysis/real_world_testsing/live_test_runner.py --once --skip-update --skip-feature-refresh
+  python data/scripts/init_db.py
+
+if [[ "${BOOTSTRAP_DATA}" == "true" || "${BOOTSTRAP_DATA}" == "1" ]]; then
+  echo "==> Seeding token universe"
+  docker compose -f analysis/real_world_testsing/docker-compose.paper.yml run --rm paper_bot \
+    python data/scripts/seed_universe.py --top "${BOOTSTRAP_TOP}" --chains "${CHAINS}"
+
+  echo "==> Backfilling hourly data (limit=${BOOTSTRAP_LIMIT})"
+  docker compose -f analysis/real_world_testsing/docker-compose.paper.yml run --rm paper_bot \
+    python data/scripts/backfill_hourly.py --start-date "${BACKFILL_START_DATE}" --limit "${BOOTSTRAP_LIMIT}" --chains "${CHAINS}" --concurrency "${BOOTSTRAP_CONCURRENCY}"
+
+  echo "==> Backfilling universe snapshots from DB"
+  docker compose -f analysis/real_world_testsing/docker-compose.paper.yml run --rm paper_bot \
+    python data/scripts/backfill_universe_snapshots_from_db.py --start-date "${BACKFILL_START_DATE}" --end-date "$(date -u +%Y-%m-%d)" --chains "${CHAINS}" --step-days 7 --top-n 10000
+else
+  echo "==> Skipping data bootstrap (BOOTSTRAP_DATA=${BOOTSTRAP_DATA})"
+fi
+
+echo "==> Running container smoke test (unit tests)"
+docker compose -f analysis/real_world_testsing/docker-compose.paper.yml run --rm paper_bot \
+  python -m unittest analysis.real_world_testsing.tests.test_dex_executor -v
+
+echo "==> Running one paper cycle"
+docker compose -f analysis/real_world_testsing/docker-compose.paper.yml run --rm paper_bot \
+  python analysis/real_world_testsing/live_test_runner.py --once --skip-update
 
 echo "==> Starting 14-day paper bot"
 docker compose -f analysis/real_world_testsing/docker-compose.paper.yml up -d --build
