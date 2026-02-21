@@ -55,11 +55,29 @@ cd /opt/mantec-paper-runner
 chmod +x bootstrap_droplet.sh runbook.sh
 ```
 
+If your repos are private and clone fails, use a PAT:
+```bash
+git clone https://<GITHUB_USER>:<GITHUB_TOKEN>@github.com/manhames/mantec-paper-runner.git mantec-paper-runner
+```
+
 ## 5) Run one-shot bootstrap (copy-paste exactly)
 
 On droplet shell (replace values):
 
 ```bash
+COINGECKO_API_KEY="<YOUR_COINGECKO_PRO_KEY>" \
+PAPER_RUNTIME_HOURS="336" \
+TOTAL_NET_WORTH_USD="100000" \
+TEST_ALLOC_FRACTION="0.01" \
+CHAINS="binance-smart-chain" \
+BOOTSTRAP_LIMIT="400" \
+bash /opt/mantec-paper-runner/bootstrap_droplet.sh
+```
+
+If `mantec-paper-core` is private, also pass:
+```bash
+GITHUB_USER="<YOUR_GITHUB_USER>" \
+GITHUB_TOKEN="<YOUR_GITHUB_TOKEN>" \
 COINGECKO_API_KEY="<YOUR_COINGECKO_PRO_KEY>" \
 PAPER_RUNTIME_HOURS="336" \
 TOTAL_NET_WORTH_USD="100000" \

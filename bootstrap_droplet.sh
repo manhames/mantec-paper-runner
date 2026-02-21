@@ -37,6 +37,13 @@ BOOTSTRAP_DATA="${BOOTSTRAP_DATA:-true}"
 BOOTSTRAP_TOP="${BOOTSTRAP_TOP:-1200}"
 BOOTSTRAP_LIMIT="${BOOTSTRAP_LIMIT:-400}"
 BOOTSTRAP_CONCURRENCY="${BOOTSTRAP_CONCURRENCY:-8}"
+GITHUB_USER="${GITHUB_USER:-}"
+GITHUB_TOKEN="${GITHUB_TOKEN:-}"
+
+AUTH_MANTEC_REPO_URL="${MANTEC_REPO_URL}"
+if [[ -n "${GITHUB_USER}" && -n "${GITHUB_TOKEN}" && "${MANTEC_REPO_URL}" == https://github.com/* ]]; then
+  AUTH_MANTEC_REPO_URL="$(echo "${MANTEC_REPO_URL}" | sed -E "s#^https://github.com/#https://${GITHUB_USER}:${GITHUB_TOKEN}@github.com/#")"
+fi
 
 echo "==> Installing base packages"
 apt-get update
@@ -56,10 +63,13 @@ systemctl start docker
 
 echo "==> Cloning/updating MANTEC repo at ${MANTEC_DIR}"
 if [[ -d "${MANTEC_DIR}/.git" ]]; then
+  git -C "${MANTEC_DIR}" remote set-url origin "${AUTH_MANTEC_REPO_URL}" || true
   git -C "${MANTEC_DIR}" fetch --all
   git -C "${MANTEC_DIR}" pull --ff-only
+  git -C "${MANTEC_DIR}" remote set-url origin "${MANTEC_REPO_URL}" || true
 else
-  git clone "${MANTEC_REPO_URL}" "${MANTEC_DIR}"
+  git clone "${AUTH_MANTEC_REPO_URL}" "${MANTEC_DIR}"
+  git -C "${MANTEC_DIR}" remote set-url origin "${MANTEC_REPO_URL}" || true
 fi
 
 echo "==> Preparing env file"
