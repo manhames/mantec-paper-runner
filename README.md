@@ -60,7 +60,6 @@ chmod +x bootstrap_droplet.sh runbook.sh
 On droplet shell (replace values):
 
 ```bash
-MANTEC_REPO_URL="https://github.com/manhames/mantec-paper-core.git" \
 COINGECKO_API_KEY="<YOUR_COINGECKO_PRO_KEY>" \
 PAPER_RUNTIME_HOURS="336" \
 TOTAL_NET_WORTH_USD="100000" \
