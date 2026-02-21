@@ -20,7 +20,7 @@ From your Windows PowerShell:
 Set-Location C:\Users\MAX\mantec-paper-runner
 git add .
 git commit -m "add droplet bootstrap and runbook"
-git remote add origin <YOUR_SMALL_REPO_URL>
+git remote add origin https://github.com/manhames/mantec-paper-runner.git
 git push -u origin main
 ```
 
@@ -50,7 +50,7 @@ On droplet shell:
 
 ```bash
 cd /opt
-git clone <YOUR_SMALL_REPO_URL> mantec-paper-runner
+git clone https://github.com/manhames/mantec-paper-runner.git mantec-paper-runner
 cd /opt/mantec-paper-runner
 chmod +x bootstrap_droplet.sh runbook.sh
 ```
